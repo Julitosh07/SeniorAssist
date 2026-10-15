@@ -1,0 +1,96 @@
+name: DevOps Deploy Pipeline - SeniorAssist (No-Docker Enterprise PaaS)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: 'Entorno de despliegue'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  # =========================================================================
+  # 1. DESPLIEGUE DEL BACKEND EN LA NUBE (AWS ELASTIC BEANSTALK - PYTHON NATIVO)
+  # =========================================================================
+  deploy-backend-aws:
+    name: 1. Deploy Backend to AWS Elastic Beanstalk (Sin Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python Runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Empaquetar Artefacto de Despliegue PaaS (ZIP)
+        run: |
+          mkdir -p dist/stage
+          cp Procfile dist/stage/
+          cp backend/requirements.txt dist/stage/
+          cp -r .ebextensions dist/stage/
+          cp -r backend/app dist/stage/backend_app
+          mkdir -p dist/stage/backend
+          mv dist/stage/backend_app dist/stage/backend/app
+          find dist/stage -type d -name "__pycache__" -exec rm -rf {} +
+          cd dist/stage
+          zip -r ../seniorassist-backend-deploy.zip .
+          cd ../..
+          ls -la dist/seniorassist-backend-deploy.zip
+
+      - name: Desplegar en AWS Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v22
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: SeniorAssist-Backend
+          environment_name: SeniorAssist-Backend-Prod
+          version_label: "seniorassist-${{ github.sha }}"
+          region: us-east-1
+          deployment_package: dist/seniorassist-backend-deploy.zip
+          use_existing_version_if_available: true
+
+  # =========================================================================
+  # 2. DESPLIEGUE DEL CLIENTE MÓVIL (FIREBASE APP DISTRIBUTION)
+  # =========================================================================
+  deploy-mobile-firebase:
+    name: 2. Deploy Android APK to Firebase App Distribution
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js & Java JDK
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+
+      - name: Compilar APK Autónomo
+        run: |
+          npm ci
+          mkdir -p android/app/src/main/assets
+          npx expo export:embed --platform android --dev false --entry-file index.ts --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Distribuir APK a Dispositivos de Adultos Mayores con Firebase
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_CREDENTIALS }}
+          groups: Grupo_Adultos_Mayores_UTS
+          file: android/app/build/outputs/apk/debug/app-debug.apk
+          releaseNotesFile: CHANGELOG.md
