@@ -10,8 +10,9 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test:client": "node scripts/verify_client_integrity.js",
+    "test:voice": "node scripts/test_voice_suite.js",
     "test:backend": "python -m backend.tests.test_api_suite",
-    "test": "node scripts/verify_client_integrity.js && python -m backend.tests.test_api_suite",
+    "test": "node scripts/verify_client_integrity.js && node scripts/test_voice_suite.js && python -m backend.tests.test_api_suite",
     "build:apk": "scripts\\build_standalone_apk.bat",
     "ios": "expo run:ios"
   },
