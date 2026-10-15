@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routers.auth import router as auth_router
 from backend.app.routers.voice import router as voice_router
 from backend.app.routers.learning import router as learning_router
+from backend.app.routers.monitoring import router as monitoring_router
 
 app = FastAPI(
     title="SeniorAssist Backend Gateway",
@@ -23,6 +24,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(voice_router)
 app.include_router(learning_router)
+app.include_router(monitoring_router)
 
 @app.get("/health", tags=["Health"])
 async def health_check():

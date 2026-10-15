@@ -1,0 +1,35 @@
+# Configuracion del Agente de Datadog para SeniorAssist (Fase 8: MONITOR)
+api_key: "${DATADOG_API_KEY}"
+site: "datadoghq.com"
+env: "production"
+service: "seniorassist-backend"
+version: "1.0.0"
+
+# 1. Habilitar Trazabilidad Distribuida (APM)
+apm_config:
+  enabled: true
+  apm_non_local_traffic: true
+
+# 2. Recoleccion de Logs de FastAPI y Nginx
+logs_enabled: true
+logs:
+  - type: file
+    path: "/var/log/seniorassist/access.log"
+    service: "seniorassist-backend"
+    source: "fastapi"
+  - type: file
+    path: "/var/log/seniorassist/error.log"
+    service: "seniorassist-backend"
+    source: "fastapi"
+
+# 3. Scraping de Metricas Prometheus en /monitoring/metrics
+prometheus_scrape:
+  enabled: true
+  configurations:
+    - prometheus_url: "http://localhost:8000/monitoring/metrics"
+      namespace: "seniorassist"
+      metrics:
+        - "seniorassist_requests_total"
+        - "seniorassist_voice_intents_total"
+        - "seniorassist_uptime_seconds"
+        - "seniorassist_security_blocked_total"

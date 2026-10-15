@@ -1,0 +1,35 @@
+# Reglas de Alerta DevOps / Prometheus / Alertmanager para SeniorAssist
+groups:
+  - name: seniorassist_slo_alerts
+    rules:
+      # ALERTA 1: Latencia de procesamiento de voz degradada (Umbral IEEE 830: < 2.0s)
+      - alert: HighVoiceLatencyWarning
+        expr: histogram_quantile(0.95, rate(seniorassist_request_duration_seconds_bucket[5m])) > 1.5
+        for: 2m
+        labels:
+          severity: warning
+          team: devops-seniorassist
+        annotations:
+          summary: "Latencia NLU elevada (> 1.5s)"
+          description: "El percentil 95 de respuesta de voz supera 1.5 segundos. Riesgo de incumplir el requisito de 2.0s."
+
+      # ALERTA 2: Tasa de Errores HTTP 5xx elevada
+      - alert: HighApiErrorRate
+        expr: sum(rate(seniorassist_requests_total{status=~"5.."}[5m])) / sum(rate(seniorassist_requests_total[5m])) > 0.02
+        for: 3m
+        labels:
+          severity: critical
+          team: devops-seniorassist
+        annotations:
+          summary: "Tasa de errores 5xx superior al 2%"
+          description: "La API esta devolviendo errores del servidor en mas del 2% del trafico."
+
+      # ALERTA 3: Alerta de Intentos de Inyeccion / Violaciones de Seguridad
+      - alert: SecurityWhitelistViolationsDetected
+        expr: increase(seniorassist_security_blocked_total[10m]) > 5
+        labels:
+          severity: warning
+          team: security-seniorassist
+        annotations:
+          summary: "Multiples peticiones bloqueadas por lista blanca"
+          description: "Se detectaron mas de 5 intentos de ejecutar comandos no autorizados en los ultimos 10 minutos."

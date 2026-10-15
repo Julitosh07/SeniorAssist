@@ -181,6 +181,21 @@ def test_learning_events_recording():
     assert r.status_code == 200
     assert r.json()["events_count"] == 2
 
+def test_monitoring_endpoints():
+    # Test extended healthcheck
+    resp_health = client.get("/monitoring/health/extended")
+    assert resp_health.status_code == 200
+    data = resp_health.json()
+    assert data["status"] == "HEALTHY"
+    assert "uptime_seconds" in data
+    assert data["diagnostics"]["nlu_engine"] == "ONLINE"
+
+    # Test Prometheus metrics endpoint
+    resp_metrics = client.get("/monitoring/metrics")
+    assert resp_metrics.status_code == 200
+    assert "seniorassist_uptime_seconds" in resp_metrics.text
+    assert "seniorassist_requests_total" in resp_metrics.text
+
 if __name__ == "__main__":
     print("Ejecutando suite de pruebas de backend SeniorAssist...")
     test_health_endpoint()
@@ -199,4 +214,6 @@ if __name__ == "__main__":
     print("[OK] test_pedagogy_adaptation_heuristics superado")
     test_learning_events_recording()
     print("[OK] test_learning_events_recording superado")
-    print("\nTODAS LAS PRUEBAS DE BACKEND (8/8) FINALIZARON CON EXITO.")
+    test_monitoring_endpoints()
+    print("[OK] test_monitoring_endpoints superado")
+    print("\nTODAS LAS PRUEBAS DE BACKEND (9/9) FINALIZARON CON EXITO.")
