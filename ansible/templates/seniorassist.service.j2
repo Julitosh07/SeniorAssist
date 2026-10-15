@@ -1,0 +1,28 @@
+[Unit]
+Description=SeniorAssist Backend Gateway Service (FastAPI / Uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User={{ ansible_user }}
+Group={{ ansible_user }}
+WorkingDirectory=/opt/seniorassist
+Environment="PATH=/opt/seniorassist/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+Environment="PYTHONPATH=/opt/seniorassist"
+Environment="SENIOR_ASSIST_JWT_SECRET={{ jwt_secret | default('senior_assist_super_secure_academic_key_2026_uts') }}"
+
+# Ejecucion con Gunicorn administrando 4 workers asincronos de Uvicorn
+ExecStart=/opt/seniorassist/venv/bin/gunicorn backend.app.main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:{{ app_port }} \
+    --access-logfile /var/log/seniorassist/access.log \
+    --error-logfile /var/log/seniorassist/error.log
+
+# Politica de Auto-Recuperacion DevOps (Reinicia en 1s si el proceso se cae)
+Restart=always
+RestartSec=1
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

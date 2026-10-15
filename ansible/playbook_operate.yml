@@ -1,0 +1,124 @@
+---
+- name: Operacion y Mantenimiento de Infraestructura Backend - SeniorAssist
+  hosts: backend_production
+  become: true
+  vars:
+    app_dir: /opt/seniorassist
+    log_dir: /var/log/seniorassist
+
+  tasks:
+    - name: 1. Actualizar repositorios y paquetes del sistema operativo
+      apt:
+        update_cache: yes
+        upgrade: dist
+        cache_valid_time: 3600
+
+    - name: 2. Instalar dependencias del sistema operativo (Python, Nginx, Audio, Firewall)
+      apt:
+        name:
+          - python3-pip
+          - python3-venv
+          - nginx
+          - ufw
+          - curl
+          - git
+          - logrotate
+        state: present
+
+    - name: 3. Configurar Firewall UFW (Seguridad de Red)
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - 22   # SSH
+        - 80   # HTTP
+        - 443  # HTTPS
+
+    - name: 4. Habilitar Firewall
+      ufw:
+        state: enabled
+
+    - name: 5. Crear directorio de aplicacion y logs
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+      loop:
+        - "{{ app_dir }}"
+        - "{{ log_dir }}"
+
+    - name: 6. Configurar entorno virtual de Python (venv)
+      command: python3 -m venv "{{ app_dir }}/venv"
+      args:
+        creates: "{{ app_dir }}/venv/bin/activate"
+
+    - name: 7. Instalar dependencias de Python y Gunicorn
+      pip:
+        virtualenv: "{{ app_dir }}/venv"
+        requirements: "{{ app_dir }}/requirements.txt"
+        extra_args: "--upgrade"
+
+    - name: 8. Instalar Gunicorn para gestion de procesos ASGI
+      pip:
+        virtualenv: "{{ app_dir }}/venv"
+        name: gunicorn
+
+    - name: 9. Desplegar plantilla de servicio Systemd
+      template:
+        src: templates/seniorassist.service.j2
+        dest: /etc/systemd/system/seniorassist.service
+        mode: '0644'
+      notify: Reiniciar SeniorAssist Service
+
+    - name: 10. Desplegar configuracion de Nginx Reverse Proxy
+      template:
+        src: templates/nginx_seniorassist.conf.j2
+        dest: /etc/nginx/sites-available/seniorassist.conf
+        mode: '0644'
+      notify: Recargar Nginx
+
+    - name: 11. Habilitar sitio en Nginx
+      file:
+        src: /etc/nginx/sites-available/seniorassist.conf
+        dest: /etc/nginx/sites-enabled/seniorassist.conf
+        state: link
+
+    - name: 12. Iniciar y habilitar servicio SeniorAssist en el arranque
+      systemd:
+        name: seniorassist
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    - name: 13. Configurar rotacion automatica de logs (logrotate)
+      copy:
+        dest: /etc/logrotate.d/seniorassist
+        content: |
+          /var/log/seniorassist/*.log {
+              weekly
+              missingok
+              rotate 12
+              compress
+              delaycompress
+              notifempty
+              create 0640 {{ ansible_user }} {{ ansible_user }}
+              sharedscripts
+              postrotate
+                  systemctl reload seniorassist > /dev/null 2>/dev/null || true
+              endscript
+          }
+
+  handlers:
+    - name: Reiniciar SeniorAssist Service
+      systemd:
+        name: seniorassist
+        state: restarted
+        daemon_reload: yes
+
+    - name: Recargar Nginx
+      systemd:
+        name: nginx
+        state: reloaded
