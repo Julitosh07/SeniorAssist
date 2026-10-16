@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: seniorassist-backend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SENIOR_ASSIST_JWT_SECRET
+        value: senior_assist_super_secure_academic_key_2026_uts
+      - key: ENVIRONMENT
+        value: production
