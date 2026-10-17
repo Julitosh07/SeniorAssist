@@ -26,6 +26,18 @@ app.include_router(voice_router)
 app.include_router(learning_router)
 app.include_router(monitoring_router)
 
+@app.get("/", tags=["Root"])
+async def root():
+    return {
+        "service": "SeniorAssist Backend Gateway",
+        "description": "API y Microservicios de Voz, Seguridad y Tutor para Adultos Mayores",
+        "status": "ONLINE",
+        "docs_url": "/docs",
+        "health_check": "/health",
+        "monitoring": "/monitoring/health/extended",
+        "version": "1.0.0"
+    }
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {

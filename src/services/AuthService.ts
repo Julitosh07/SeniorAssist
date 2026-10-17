@@ -3,7 +3,9 @@ import { Platform } from 'react-native';
 
 const DEVICE_ID_KEY = 'senior_assist_device_uuid';
 const TOKEN_KEY = 'senior_assist_jwt_token';
-const BACKEND_URL = 'http://localhost:8000';
+const PRODUCTION_BACKEND_URL = 'https://seniorassist.onrender.com';
+const LOCAL_BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = PRODUCTION_BACKEND_URL;
 
 export class AuthService {
   private static instance: AuthService;

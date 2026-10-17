@@ -2,7 +2,9 @@ import { authService } from './AuthService';
 import { isActionAllowed, AllowedActionType } from '../constants/actions';
 import { VoiceIntentResponse } from '../types/intents';
 
-const BACKEND_URL = 'http://localhost:8000';
+const PRODUCTION_BACKEND_URL = 'https://seniorassist.onrender.com';
+const LOCAL_BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = PRODUCTION_BACKEND_URL;
 
 export class AIService {
   private static instance: AIService;
