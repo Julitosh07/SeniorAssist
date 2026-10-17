@@ -1,4 +1,4 @@
 # SeniorAssist - Checksums de Verificación Criptográfica (SHA-256)
-# Generado para el Release de Producción v1.0.0
+# Generado para el Release de Producción v1.0.0 (Apuntando a Render Cloud)
 
-6f82acb0b6cf9d7adcddc2ada075c7004f712034f68ea7c788a1ce4a0cefc24e *SeniorAssist.apk
+a8c0a17e4a4dbf42ecf97c7d8ca889818ff9d051fc54ebe19897846f666772a2 *SeniorAssist.apk
