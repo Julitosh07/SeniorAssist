@@ -7,11 +7,17 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { GlobalVoiceAssistantProvider } from './src/context/GlobalVoiceAssistantContext';
 import { backgroundAssistantService } from './src/services/BackgroundAssistantService';
 import { voiceService } from './src/services/VoiceService';
+import { authService } from './src/services/AuthService';
 
 const MainApp: React.FC = () => {
   const { isDark } = useTheme();
 
   useEffect(() => {
+    // Inicializar autenticacion transparente y handshake con Render en segundo plano
+    authService.getValidToken().catch(err => {
+      console.log('Handshake local:', err);
+    });
+
     // Configurar notificación permanente accesible en segundo plano
     backgroundAssistantService.setupPersistentAssistant();
 

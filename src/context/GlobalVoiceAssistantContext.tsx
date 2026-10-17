@@ -179,6 +179,9 @@ export const GlobalVoiceAssistantProvider: React.FC<{ children: React.ReactNode 
 
     const cleanSpoken = spokenText.toLowerCase().trim();
 
+    // Notificar en segundo plano al backend en Render para telemetría e intención en tiempo real
+    aiService.extractIntent(spokenText).catch(() => {});
+
     // 0. Manejo de desambiguación activa si se preguntó previamente por el contacto
     if (pendingDisambiguationRef.current) {
       const pending = pendingDisambiguationRef.current;
