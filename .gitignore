@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Expo / Metro
 .expo/
@@ -29,3 +28,4 @@ __pycache__/
 Thumbs.db
 .vscode/
 .idea/
+~$*.docx
